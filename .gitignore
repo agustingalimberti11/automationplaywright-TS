@@ -1,0 +1,17 @@
+node_modules/
+target/
+.idea/
+*.iml
+.allure/
+allure-results/
+allure-report/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+.features-gen/
+.env
+*.log
+.DS_Store
+Thumbs.db
+dist/
