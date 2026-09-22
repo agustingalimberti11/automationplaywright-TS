@@ -1,5 +1,4 @@
 import { Locator, Page } from "@playwright/test";
-import { DatosVuelo } from "../types/dominio";
 import { BasePage } from "./BasePage";
 
 export class FlightFinderPage extends BasePage {
@@ -40,7 +39,7 @@ export class FlightFinderPage extends BasePage {
     await this.goto("reservation.php");
   }
 
-  async buscarVuelo(datos: DatosVuelo): Promise<void> {
+  async buscarVuelo(datos: Record<string, string>): Promise<void> {
     if (datos.tipo.toLowerCase() === "oneway") {
       await this.oneWay.check();
     } else {

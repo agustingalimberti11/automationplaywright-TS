@@ -25,8 +25,9 @@ Eso es el punto de este repo: **Cucumber para el “qué”**, **Playwright Test
 13. [Scripts](#scripts)
 14. [CI](#ci)
 15. [Cómo agregar un escenario nuevo](#cómo-agregar-un-escenario-nuevo)
-16. [Mapa de carpetas](#mapa-de-carpetas)
-17. [Archivos de configuración](#archivos-de-configuración)
+16. [API (aún vacío)](#api-aún-vacío)
+17. [Mapa de carpetas](#mapa-de-carpetas)
+18. [Archivos de configuración](#archivos-de-configuración)
 
 ---
 
@@ -159,7 +160,6 @@ npm test
 | Steps | ¿Qué TypeScript ejecuta cada frase? | `src/steps/` |
 | Pages | ¿Cómo se hace clic/fill en ESA pantalla? | `src/pages/` |
 | Components | ¿Qué pedazo de UI se reutiliza en varias pantallas? | `src/pages/components/` |
-| Tipos | ¿Qué forma tienen los datos de registro/vuelo? | `src/types/` |
 | Entorno | ¿A qué URL y con qué usuario? | `.env` / `src/config/env.ts` |
 
 Regla práctica:
@@ -168,6 +168,7 @@ Regla práctica:
 - El **step** no habla con el DOM (`page.locator` no va acá).
 - El **page object** no decide el negocio: solo sabe operar esa pantalla.
 - Las **aserciones** (`expect`) viven en el step, no escondidas dentro del page object.
+- Una **API no es una page**. El cliente HTTP va en `src/api/`, no en `src/pages/`.
 
 ---
 
@@ -214,14 +215,7 @@ HomePage / RegisterPage / FlightFinderPage
 
 El menú y el iframe de cookies **no se heredan como métodos sueltos**. Son objetos (`MainMenu`, `CookieBanner`) que `BasePage` arma y usa. Eso es composición: si el menú cambia, se edita un archivo.
 
-Los formularios largos no se llenan con 11 parámetros. Viajan como objeto tipado:
-
-```ts
-await registerPage.registrar(datos);      // DatosRegistro
-await flightFinderPage.buscarVuelo(datos); // DatosVuelo
-```
-
-La tabla Gherkin se convierte a ese objeto en `src/utils/data-table.ts`.
+Los formularios largos no se llenan con 11 parámetros. El step pasa la tabla Gherkin con `tabla.rowsHash()` y el page object usa esas claves (`nombre`, `origen`, etc.).
 
 New Tours es HTML viejo: muchos inputs no tienen label usable. Por eso en login/registro se usa `input[name='...']` y no `getByLabel`. Donde sí hay texto o rol (`REGISTER`, `SIGN-OFF`), se usa `getByRole` / `getByText`.
 
@@ -375,6 +369,27 @@ Ese es el orden a propósito: primero el negocio, después el pegamento, al fina
 
 ---
 
+## API (aún vacío)
+
+Las carpetas ya están creadas para cuando quieras automatizar HTTP. Playwright trae `request` (`APIRequestContext`): no hace falta Rest Assured ni SuperTest.
+
+| Carpeta | Qué va ahí | Equivale en UI a |
+|---|---|---|
+| `features/api/` | `.feature` de contratos HTTP | `features/*.feature` |
+| `src/api/` | cliente HTTP (GET/POST, headers, token) | `src/pages/` |
+| `src/steps/api/` | `Given` / `When` / `Then` que llaman al cliente | `src/steps/` |
+
+Hoy no hay código adentro (solo `.gitkeep` para que Git no ignore la carpeta vacía). Cuando empieces:
+
+1. Un cliente en `src/api/`, por ejemplo `src/api/usuarios.ts`, usando `request` de Playwright.
+2. Lo inyectás como fixture en `src/fixtures/index.ts` (igual que `homePage`).
+3. Steps en `src/steps/api/`.
+4. Escenarios en `features/api/`.
+
+No hace falta tocar `playwright.config.ts`: ya toma `features/**/*.feature` y `src/steps/**/*.ts`.
+
+---
+
 ## Mapa de carpetas
 
 ```text
@@ -387,11 +402,13 @@ automationplaywright-ts/
 ├── Jenkinsfile
 ├── .github/workflows/playwright.yml
 ├── features/                            Gherkin (Cucumber), idioma español
+│   ├── api/                             reservado: contratos HTTP
 │   ├── login.feature
 │   ├── registro.feature
 │   ├── navegacion.feature
 │   └── vuelos.feature
 └── src/
+    ├── api/                             reservado: cliente HTTP (no pages)
     ├── config/env.ts                    BASE_URL, DEMO_USER, DEMO_PASSWORD
     ├── fixtures/index.ts                test.extend + Given / When / Then
     ├── pages/
@@ -403,12 +420,11 @@ automationplaywright-ts/
     │       ├── MainMenu.ts
     │       └── CookieBanner.ts
     ├── steps/
+    │   ├── api/                         reservado: steps HTTP
     │   ├── common.steps.ts              home, menú, título, mensajes
     │   ├── login.steps.ts
     │   ├── registro.steps.ts
     │   └── vuelos.steps.ts
-    ├── types/dominio.ts                 DatosRegistro, DatosVuelo
-    └── utils/data-table.ts              tabla Gherkin → objeto tipado
 ```
 
 `.features-gen/` aparece después de `bddgen`. Es código generado: no se edita a mano.

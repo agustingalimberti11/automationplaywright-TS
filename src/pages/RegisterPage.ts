@@ -1,5 +1,4 @@
 import { Locator, Page } from "@playwright/test";
-import { DatosRegistro } from "../types/dominio";
 import { BasePage } from "./BasePage";
 
 export class RegisterPage extends BasePage {
@@ -38,7 +37,7 @@ export class RegisterPage extends BasePage {
     await this.goto("register.php");
   }
 
-  async registrar(datos: DatosRegistro): Promise<void> {
+  async registrar(datos: Record<string, string>): Promise<void> {
     await this.firstName.fill(datos.nombre);
     await this.lastName.fill(datos.apellido);
     await this.phone.fill(datos.telefono);

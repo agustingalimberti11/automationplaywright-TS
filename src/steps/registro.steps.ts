@@ -1,14 +1,13 @@
 import { expect } from "@playwright/test";
 import { DataTable } from "playwright-bdd";
 import { Given, Then, When } from "../fixtures";
-import { datosRegistroDesdeTabla } from "../utils/data-table";
 
 Given("que el usuario abre la pagina de registro", async ({ registerPage }) => {
   await registerPage.abrir();
 });
 
 When("completa el registro con:", async ({ registerPage, scenarioData }, tabla: DataTable) => {
-  const datos = datosRegistroDesdeTabla(tabla);
+  const datos = tabla.rowsHash();
   const usuario = `${datos.usuario}${Date.now()}`;
   scenarioData.usuarioCreado = usuario;
   await registerPage.registrar({ ...datos, usuario });
