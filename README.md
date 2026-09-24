@@ -45,8 +45,8 @@ Este proyecto usa el segundo, **sin tirar Cucumber**.
 `playwright-bdd` lee los `.feature`, genera tests nativos de Playwright y los corre con el runner oficial. Los steps siguen siendo `Given` / `When` / `Then`. Los features siguen siendo el contrato de negocio.
 
 ```text
-negocio lee  →  features/*.feature     (Gherkin, español)
-automatizador →  src/steps/*.ts        (une la frase con TypeScript)
+negocio lee  →  features/ui/*.feature  (Gherkin, español)
+automatizador →  src/ui/steps/*.ts     (une la frase con TypeScript)
 Playwright    →  browser, waits, reportes, paralelo
 ```
 
@@ -121,7 +121,7 @@ bddgen && playwright test
 
 ### 1. `bddgen`
 
-Lee `features/**/*.feature` y `src/steps/**/*.ts`. Genera tests de Playwright en `.features-gen/` (esa carpeta no se sube a git).
+Lee `features/ui` + `features/api` y los steps de `src/ui` + `src/api`. Genera tests de Playwright en `.features-gen/` (esa carpeta no se sube a git).
 
 Un escenario Gherkin se convierte en un `test('...')` que llama a cada step por su texto.
 
@@ -154,12 +154,14 @@ npm test
 
 | Capa | Pregunta | Dónde |
 |---|---|---|
-| Feature | ¿Qué tiene que pasar en negocio? | `features/` |
+| Feature UI | ¿Qué tiene que pasar en negocio (web)? | `features/ui/` |
+| Feature API | ¿Qué tiene que pasar en negocio (HTTP)? | `features/api/` |
 | Config | ¿Cómo se corre (browser, retries, traces)? | `playwright.config.ts` |
-| Fixtures | ¿Qué page objects recibe este escenario? | `src/fixtures/` |
-| Steps | ¿Qué TypeScript ejecuta cada frase? | `src/steps/` |
-| Pages | ¿Cómo se hace clic/fill en ESA pantalla? | `src/pages/` |
-| Components | ¿Qué pedazo de UI se reutiliza en varias pantallas? | `src/pages/components/` |
+| Fixtures UI | ¿Qué page objects recibe este escenario? | `src/ui/fixtures/` |
+| Steps UI | ¿Qué TypeScript ejecuta cada frase web? | `src/ui/steps/` |
+| Pages | ¿Cómo se hace clic/fill en ESA pantalla? | `src/ui/pages/` |
+| Components | ¿Qué pedazo de UI se reutiliza en varias pantallas? | `src/ui/pages/components/` |
+| API | Cliente HTTP (cuando exista) | `src/api/` |
 | Entorno | ¿A qué URL y con qué usuario? | `.env` / `src/config/env.ts` |
 
 Regla práctica:
@@ -168,13 +170,13 @@ Regla práctica:
 - El **step** no habla con el DOM (`page.locator` no va acá).
 - El **page object** no decide el negocio: solo sabe operar esa pantalla.
 - Las **aserciones** (`expect`) viven en el step, no escondidas dentro del page object.
-- Una **API no es una page**. El cliente HTTP va en `src/api/`, no en `src/pages/`.
+- Una **API no es una page**. El cliente HTTP va en `src/api/`, no en `src/ui/pages/`.
 
 ---
 
 ## Un escenario de punta a punta
 
-Feature (`features/login.feature`):
+Feature (`features/ui/login.feature`):
 
 ```gherkin
 @smoke
@@ -225,7 +227,7 @@ New Tours es HTML viejo: muchos inputs no tienen label usable. Por eso en login/
 
 En Playwright, una fixture es “esto que el test necesita, ya listo”.
 
-`src/fixtures/index.ts`:
+`src/ui/fixtures/index.ts`:
 
 - extiende el `test` de `playwright-bdd`
 - crea `homePage`, `registerPage`, `flightFinderPage` a partir de `page`
@@ -358,10 +360,10 @@ La tool de Node en Jenkins se llama `node22`. Si en tu servidor tiene otro nombr
 
 ## Cómo agregar un escenario nuevo
 
-1. Escribí el escenario en un `.feature` (o creá uno nuevo en `features/`).
+1. Escribí el escenario en un `.feature` (web en `features/ui/`, HTTP en `features/api/`).
 2. Corré `npm test`. Si falta un step, Playwright-BDD te dice la frase que no matchea.
-3. Agregá el `Given` / `When` / `Then` en `src/steps/`, usando fixtures (`homePage`, `page`, …).
-4. Si la pantalla aún no existe, creá un Page Object en `src/pages/` y registralo en `src/fixtures/index.ts`.
+3. Agregá el `Given` / `When` / `Then` en `src/ui/steps/` (o `src/api/steps/`), usando fixtures (`homePage`, `page`, …).
+4. Si la pantalla aún no existe, creá un Page Object en `src/ui/pages/` y registralo en `src/ui/fixtures/index.ts`.
 5. Poné `@smoke` o `@regresion`.
 6. No pongas locators en el step.
 
@@ -375,18 +377,18 @@ Las carpetas ya están creadas para cuando quieras automatizar HTTP. Playwright 
 
 | Carpeta | Qué va ahí | Equivale en UI a |
 |---|---|---|
-| `features/api/` | `.feature` de contratos HTTP | `features/*.feature` |
-| `src/api/` | cliente HTTP (GET/POST, headers, token) | `src/pages/` |
-| `src/steps/api/` | `Given` / `When` / `Then` que llaman al cliente | `src/steps/` |
+| `features/api/` | `.feature` de contratos HTTP | `features/ui/` |
+| `src/api/` | cliente HTTP (GET/POST, headers, token) | `src/ui/pages/` |
+| `src/api/steps/` | `Given` / `When` / `Then` que llaman al cliente | `src/ui/steps/` |
 
 Hoy no hay código adentro (solo `.gitkeep` para que Git no ignore la carpeta vacía). Cuando empieces:
 
 1. Un cliente en `src/api/`, por ejemplo `src/api/usuarios.ts`, usando `request` de Playwright.
-2. Lo inyectás como fixture en `src/fixtures/index.ts` (igual que `homePage`).
-3. Steps en `src/steps/api/`.
+2. Lo inyectás como fixture (podés crear `src/api/fixtures.ts` o extender el test de UI).
+3. Steps en `src/api/steps/`.
 4. Escenarios en `features/api/`.
 
-No hace falta tocar `playwright.config.ts`: ya toma `features/**/*.feature` y `src/steps/**/*.ts`.
+`playwright.config.ts` ya apunta a `features/ui` + `features/api` y a los steps de ambos lados.
 
 ---
 
@@ -401,30 +403,30 @@ automationplaywright-ts/
 ├── .env.example                         plantilla de URL / usuario
 ├── Jenkinsfile
 ├── .github/workflows/playwright.yml
-├── features/                            Gherkin (Cucumber), idioma español
-│   ├── api/                             reservado: contratos HTTP
-│   ├── login.feature
-│   ├── registro.feature
-│   ├── navegacion.feature
-│   └── vuelos.feature
+├── features/
+│   ├── api/                             reservado: Gherkin HTTP
+│   └── ui/                              Gherkin web
+│       ├── login.feature
+│       ├── registro.feature
+│       ├── navegacion.feature
+│       └── vuelos.feature
 └── src/
-    ├── api/                             reservado: cliente HTTP (no pages)
+    ├── api/                             reservado: cliente y steps HTTP
+    │   └── steps/
     ├── config/env.ts                    BASE_URL, DEMO_USER, DEMO_PASSWORD
-    ├── fixtures/index.ts                test.extend + Given / When / Then
-    ├── pages/
-    │   ├── BasePage.ts                  goto + menú + cookies
-    │   ├── HomePage.ts                  login
-    │   ├── RegisterPage.ts              alta de usuario
-    │   ├── FlightFinderPage.ts          buscador de vuelos
-    │   └── components/
-    │       ├── MainMenu.ts
-    │       └── CookieBanner.ts
-    ├── steps/
-    │   ├── api/                         reservado: steps HTTP
-    │   ├── common.steps.ts              home, menú, título, mensajes
-    │   ├── login.steps.ts
-    │   ├── registro.steps.ts
-    │   └── vuelos.steps.ts
+    └── ui/
+        ├── fixtures/index.ts            test.extend + Given / When / Then
+        ├── pages/
+        │   ├── BasePage.ts
+        │   ├── HomePage.ts
+        │   ├── RegisterPage.ts
+        │   ├── FlightFinderPage.ts
+        │   └── components/
+        └── steps/
+            ├── common.steps.ts
+            ├── login.steps.ts
+            ├── registro.steps.ts
+            └── vuelos.steps.ts
 ```
 
 `.features-gen/` aparece después de `bddgen`. Es código generado: no se edita a mano.

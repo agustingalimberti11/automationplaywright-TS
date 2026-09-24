@@ -4,8 +4,8 @@ import "dotenv/config";
 import { env } from "./src/config/env";
 
 const testDir = defineBddConfig({
-  features: "features/**/*.feature",
-  steps: ["src/fixtures/index.ts", "src/steps/**/*.ts"],
+  features: ["features/ui/**/*.feature", "features/api/**/*.feature"],
+  steps: ["src/ui/fixtures/index.ts", "src/ui/steps/**/*.ts", "src/api/steps/**/*.ts"],
   language: "es",
   outputDir: ".features-gen",
 });

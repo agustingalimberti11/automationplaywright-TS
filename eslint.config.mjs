@@ -34,7 +34,7 @@ export default tseslint.config(
   },
   {
     ...playwright.configs["flat/recommended"],
-    files: ["src/steps/**/*.ts"],
+    files: ["src/ui/steps/**/*.ts", "src/api/steps/**/*.ts"],
     rules: {
       ...playwright.configs["flat/recommended"].rules,
       "playwright/no-standalone-expect": "off",

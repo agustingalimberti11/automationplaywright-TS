@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { env } from "../config/env";
+import { env } from "../../config/env";
 import { Then, When } from "../fixtures";
 
 When("inicia sesion con el usuario de demo", async ({ homePage }) => {

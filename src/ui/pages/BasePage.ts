@@ -1,5 +1,5 @@
 import { Locator, Page } from "@playwright/test";
-import { env } from "../config/env";
+import { env } from "../../config/env";
 import { CookieBanner } from "./components/CookieBanner";
 import { MainMenu } from "./components/MainMenu";
 
